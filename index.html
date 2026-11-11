@@ -185,10 +185,13 @@ async function saveProgram(){
 function inputPage(){
  const root=el('div');
  const isTL=session.role==='TL';
- const storeOptions=options(data.stores,s=>s.storeId,s=>s.storeName,session.storeId);
+ const storeOptions = session.role === 'TL'
+  ? `<option value="${esc(session.storeId)}" selected>${esc(session.storeName)}</option>`
+  : '<option value="">Pilih store</option>' + options(data.stores||[],s=>s.storeId,s=>s.storeName);
  root.appendChild(el('div','panel',`
   <h3 class="sectionTitle">Input Training</h3>
-  <div class="notice">Pilih department, kategori materi, tanggal training, dan crew. Sistem otomatis memuat seluruh materi SOP aktif pada kategori yang dipilih. Tidak menggunakan periode mingguan.</div>
+  <div class="notice">Tahap 1: tentukan materi dan peserta training. Setelah menekan MULAI TRAINING, sistem menampilkan dokumen SOP untuk dipelajari dan form evaluasi pemahaman crew.</div>
+  <h3>1. Persiapan Training</h3>
   <div class="formRow">
    ${selectField('Department','iDept','<option value="">Pilih Department</option><option value="FRONT">FRONT</option><option value="BACK">BACK</option>')}
    ${selectField('Kategori Materi','iCategory','<option value="">Pilih department terlebih dahulu</option>')}
@@ -201,10 +204,19 @@ function inputPage(){
    ${field('Tanggal Training','iTrainingDate', '', 'date')}
    <div class="field"><label>Trainer</label><input value="${esc(session.fullName)}" disabled></div>
   </div>
-  <div id="evalArea"></div>
-  <div class="field"><label>Catatan Training (opsional)</label><textarea id="iNotes" placeholder="Catatan pelaksanaan training..."></textarea></div>
-  <div class="actions"><button class="primary" id="submitTrainingBtn" type="button">SUBMIT HASIL TRAINING</button></div>
-  <p id="inputMsg" class="muted"></p>
+  <div class="actions">
+   <button class="primary" id="startTrainingBtn" type="button">MULAI TRAINING</button>
+  </div>
+  <p id="setupMsg" class="muted"></p>
+  <div id="trainingStage" class="hidden">
+   <hr>
+   <h3>2. Pelaksanaan Refresh SOP & Evaluasi</h3>
+   <div id="evalArea"></div>
+   <div class="field"><label>Catatan Training (opsional)</label><textarea id="iNotes" placeholder="Catatan pelaksanaan training..."></textarea></div>
+   <div class="actions"><button class="primary" id="submitTrainingBtn" type="button">SELESAIKAN & SIMPAN HASIL</button>
+   <button class="secondary" id="editTrainingBtn" type="button">UBAH PILIHAN</button></div>
+   <p id="inputMsg" class="muted"></p>
+  </div>
  `));
  const dept=root.querySelector('#iDept');
  const category=root.querySelector('#iCategory');
@@ -212,47 +224,62 @@ function inputPage(){
  const crew=root.querySelector('#iCrew');
  const area=root.querySelector('#evalArea');
  const date=root.querySelector('#iTrainingDate');
+ const stage=root.querySelector('#trainingStage');
+ const startBtn=root.querySelector('#startTrainingBtn');
  date.value=dateNow();
  if(isTL){store.value=session.storeId;store.disabled=true;}
 
+ let selectedSops=[];
  function clearEvaluation(){
   area.innerHTML='';
   selectedScores={};
+  selectedSops=[];
+ }
+ function unlockSetup(){
+  [dept,category,store,crew,date].forEach(x=>x.disabled=(isTL && x===store)?true:false);
+  stage.classList.add('hidden');
+  startBtn.disabled=false;
+  startBtn.textContent='MULAI TRAINING';
+  clearEvaluation();
  }
  function loadCategories(){
   const cats=[...new Set((data.sops||[])
-   .filter(s=>s.department===dept.value && s.status!=='INACTIVE')
+   .filter(s=>String(s.department).toUpperCase()===dept.value && String(s.status).toUpperCase()!=='INACTIVE')
    .map(s=>s.category).filter(Boolean))].sort();
-  category.innerHTML='<option value="">Pilih kategori materi</option>'+
-   options(cats,x=>x,x=>x);
+  category.innerHTML='<option value="">Pilih kategori materi</option>'+options(cats,x=>x,x=>x);
   loadCrew();
-  clearEvaluation();
+  unlockSetup();
  }
  function loadCrew(){
+  const selectedStoreName = session.role === 'TL'
+   ? String(session.storeName||'').trim().toUpperCase()
+   : String((data.stores||[]).find(s=>String(s.storeId)===String(store.value))?.storeName||'').trim().toUpperCase();
   const list=(data.crew||[]).filter(c=>
-   c.storeId===store.value && c.department===dept.value
+   (String(c.storeId||'').trim().toUpperCase()===String(store.value||'').trim().toUpperCase() ||
+    String(c.storeName||'').trim().toUpperCase()===selectedStoreName) &&
+   String(c.department||'').trim().toUpperCase()===String(dept.value||'').trim().toUpperCase() &&
+   String(c.status||'ACTIVE').trim().toUpperCase()==='ACTIVE'
   ).sort((a,b)=>a.name.localeCompare(b.name));
-  crew.innerHTML='<option value="">Pilih crew</option>'+
-   options(list,c=>c.nik,c=>c.name+' • '+c.nik);
-  clearEvaluation();
+  crew.innerHTML='<option value="">Pilih crew</option>'+options(list,c=>c.nik,c=>c.name+' • '+c.nik);
+  unlockSetup();
  }
- function loadEval(){
+ function buildEvaluation(){
   clearEvaluation();
-  const selectedCrew=(data.crew||[]).find(c=>c.nik===crew.value);
-  const sops=(data.sops||[]).filter(s=>
-   s.department===dept.value && s.category===category.value && s.status!=='INACTIVE'
+  selectedSops=(data.sops||[]).filter(s=>
+   String(s.department).toUpperCase()===dept.value &&
+   String(s.category)===category.value &&
+   String(s.status).toUpperCase()!=='INACTIVE'
   ).sort((a,b)=>Number(a.sequence||0)-Number(b.sequence||0));
-  if(!dept.value || !category.value || !selectedCrew)return;
-  if(!sops.length){
-   area.innerHTML='<div class="notice">Belum ada materi SOP aktif untuk kategori ini. Hubungi Area Manager untuk sinkronisasi SOP.</div>';
-   return;
+  if(!selectedSops.length){
+   area.appendChild(el('div','notice','Belum ada materi SOP aktif untuk kategori ini. Minta Area Manager menjalankan sinkronisasi SOP.'));
+   return false;
   }
-  area.appendChild(el('div','panel',`<h3 class="sectionTitle">Materi Evaluasi — ${esc(category.value)}</h3><p class="muted">${sops.length} materi SOP ditemukan</p>`));
-  sops.forEach(s=>{
+  area.appendChild(el('div','notice',`Training dimulai untuk ${esc(crew.options[crew.selectedIndex].text)} · ${esc(category.value)} · ${selectedSops.length} materi SOP. Buka dokumen, lakukan refresh, lalu nilai pemahaman crew.`));
+  selectedSops.forEach(s=>{
    const card=el('div','sopCard',`
     <h4>${esc(s.title)} ${s.critical?'<span class="critical"> • CRITICAL SOP</span>':''}</h4>
     <p>${esc(s.code)} · ${esc(s.itemType||'PRODUCT & PROCESS')}</p>
-    ${s.link?`<p><a href="${esc(s.link)}" target="_blank" rel="noopener noreferrer">BUKA DOKUMEN SOP ↗</a></p>`:''}
+    ${s.link?`<p><a href="${esc(s.link)}" target="_blank" rel="noopener noreferrer">BUKA DOKUMEN SOP ↗</a></p>`:'<p class="muted">Link dokumen belum tersedia.</p>'}
     <div class="scoreGrid">${[[1,'Belum memahami'],[2,'Cukup memahami'],[3,'Memahami'],[4,'Sangat memahami']].map(([n,t])=>`<button type="button" class="scoreBtn" data-score="${n}"><b>${n}</b><small>${t}</small></button>`).join('')}</div>
     <div class="field"><label>Kekurangan / Temuan</label><textarea class="short" placeholder="Catat bagian yang belum dipahami..."></textarea></div>
     <div class="field"><label>Tindak Lanjut / Coaching</label><textarea class="action" placeholder="Rencana perbaikan atau coaching..."></textarea></div>
@@ -265,12 +292,28 @@ function inputPage(){
    });
    area.appendChild(card);
   });
+  return true;
+ }
+ function startTraining(){
+  if(!dept.value||!category.value||!store.value||!crew.value||!date.value){
+   msg('setupMsg','Lengkapi Department, Kategori Materi, Store, Crew, dan Tanggal Training terlebih dahulu.');
+   return;
+  }
+  if(!buildEvaluation())return;
+  stage.classList.remove('hidden');
+  [dept,category,store,crew,date].forEach(x=>x.disabled=true);
+  startBtn.disabled=true;
+  startBtn.textContent='TRAINING SEDANG BERLANGSUNG';
+  msg('setupMsg','Persiapan selesai. Silakan lakukan refresh SOP dan evaluasi crew.');
+  stage.scrollIntoView({behavior:'smooth',block:'start'});
  }
  dept.onchange=loadCategories;
- category.onchange=loadEval;
+ category.onchange=unlockSetup;
  store.onchange=loadCrew;
- crew.onchange=loadEval;
+ crew.onchange=unlockSetup;
+ startBtn.onclick=startTraining;
  root.querySelector('#submitTrainingBtn').onclick=submitTraining;
+ root.querySelector('#editTrainingBtn').onclick=unlockSetup;
  loadCategories();
  return root;
 }
@@ -279,12 +322,13 @@ async function submitTraining(){
  const trainingDate=val('iTrainingDate');
  const cards=[...document.querySelectorAll('#evalArea .sopCard')];
  if(!department||!category||!nik||!trainingDate){
-  msg('inputMsg','Lengkapi department, kategori, tanggal training, dan crew.');
+  msg('inputMsg','Lengkapi data training terlebih dahulu.');
   return;
  }
- if(!cards.length){msg('inputMsg','Materi SOP belum dimuat. Periksa kategori atau sinkronisasi SOP.');return;}
+ if(!cards.length){msg('inputMsg','Materi SOP belum dimuat. Klik MULAI TRAINING terlebih dahulu.');return;}
  if(cards.some(c=>!selectedScores[c.dataset.sopId])){
-  msg('inputMsg','Semua materi SOP wajib diberikan nilai sebelum submit.');return;
+  msg('inputMsg','Semua materi SOP wajib diberikan nilai sebelum hasil disimpan.');
+  return;
  }
  const evaluations=cards.map(c=>({
   sopId:c.dataset.sopId,score:selectedScores[c.dataset.sopId],
@@ -298,13 +342,13 @@ async function submitTraining(){
    action:'submitQuickEvaluation',department,category,nik,trainingDate,
    evaluations,notes:val('iNotes')
   }));
-  msg('inputMsg',`${r.message} • Attempt ${r.attempt} • Rata-rata ${r.average} • ${r.status}`);
+  alert(`${r.message}\nAttempt: ${r.attempt}\nRata-rata: ${r.average}\nKesimpulan: ${r.status}`);
   await refreshData();
+  currentPage='dashboard';
   render();
- }catch(e){msg('inputMsg',e.message);}
- finally{
-  const b=document.getElementById('submitTrainingBtn');
-  if(b){b.disabled=false;b.textContent='SUBMIT HASIL TRAINING';}
+ }catch(e){
+  msg('inputMsg',e.message);
+  btn.disabled=false;btn.textContent='SELESAIKAN & SIMPAN HASIL';
  }
 }
 function crewPage(){
