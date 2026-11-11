@@ -440,11 +440,12 @@ async function saveCurrentCategoryDraft(){
  if(!department||!category||!nik||!val('iStartDate')||!val('iEndDate')){
   msg('inputMsg','Lengkapi data training sebelum menyimpan draft.');return;
  }
- if(!cards.length||cards.some(c=>!selectedScores[c.dataset.sopId])){
-  msg('inputMsg','Berikan nilai pada seluruh materi SOP kategori ini sebelum menyimpan draft.');return;
+ const completedCards=cards.filter(c=>[1,2,3,4].includes(Number(selectedScores[c.dataset.sopId])));
+ if(!completedCards.length){
+  msg('inputMsg','Berikan minimal satu nilai pada materi SOP sebelum menyimpan draft.');return;
  }
- const evaluations=cards.map(c=>({
-  sopId:c.dataset.sopId,score:selectedScores[c.dataset.sopId],
+ const evaluations=completedCards.map(c=>({
+  sopId:c.dataset.sopId,score:Number(selectedScores[c.dataset.sopId]),
   shortcoming:c.querySelector('.short').value,
   action:c.querySelector('.action').value
  }));
@@ -457,7 +458,7 @@ async function saveCurrentCategoryDraft(){
    evaluations,notes:val('iNotes')
   }));
   activeDraft=await (async()=>{const x=await api(authPayload({action:'getDraft',draftId:r.draftId}));return x.draft;})();
-  alert('Materi '+category+' berhasil disimpan ke Draft Training.');
+  alert(`${evaluations.length} dari ${cards.length} materi SOP ${category} berhasil disimpan ke Draft Training. Kamu bisa melanjutkan penilaian materi lainnya nanti.`);
   await refreshData();
   activeDraftCategory='';
   currentPage='drafts';
@@ -477,7 +478,7 @@ async function resumeTrainingDraft(draftId,category){
 function draftsPage(){
  const root=el('div');
  root.appendChild(el('div','panel',`<h3 class="sectionTitle">Draft Training</h3>
-  <p class="muted">Simpan beberapa kategori materi dalam satu draft untuk crew dan rentang training yang sama. Materi yang tersimpan sebagai draft belum dihitung sebagai hasil final.</p>`));
+  <p class="muted">Simpan penilaian secara bertahap. Kamu boleh menilai satu atau beberapa poin SOP saja, lalu lanjutkan sisanya nanti. Beberapa kategori dapat disimpan dalam satu draft untuk crew dan rentang training yang sama. Draft belum dihitung sebagai hasil final.</p>`));
  const drafts=data.drafts||[];
  if(!drafts.length){
   root.appendChild(el('div','panel','<div class="empty">Belum ada draft training. Mulai dari menu Input Training lalu pilih SIMPAN MATERI KE DRAFT.</div>'));
@@ -485,12 +486,20 @@ function draftsPage(){
  }
  drafts.forEach(d=>{
   const cats=Object.keys(d.categories||{});
-  const catHtml=cats.map(c=>`<div class="draftCategory"><b>${esc(c)}</b> <span class="status ${String(d.categories[c].status).toUpperCase()==='FINAL'?'success':'draft'}">${String(d.categories[c].status).toUpperCase()==='FINAL'?'SELESAI':'DRAFT'}</span></div>`).join('');
+  const catHtml=cats.map(c=>{
+   const item=d.categories[c]||{};
+   const done=(item.evaluations||[]).length;
+   const total=Number(item.totalSops||done);
+   const isFinal=String(item.status).toUpperCase()==='FINAL';
+   return `<div class="draftCategory"><div><b>${esc(c)}</b><small style="display:block">${done}/${total} materi dinilai</small></div><span class="status ${isFinal?'success':'draft'}">${isFinal?'SELESAI':'DRAFT'}</span></div>`;
+  }).join('');
   const allCats=[...new Set((data.sops||[]).filter(s=>
    String(s.department||'').toUpperCase()===String(d.department).toUpperCase() &&
    String(s.status||'ACTIVE').toUpperCase()!=='INACTIVE'
   ).map(s=>s.category))].sort();
-  const pending=allCats.filter(c=>!cats.includes(c));
+  const pending=allCats.filter(c=>
+   !d.categories[c] || String(d.categories[c].status).toUpperCase()!=='FINAL'
+  );
   const card=el('div','panel',`
    <div class="rowBetween"><h3>${esc(d.crewName)} • ${esc(d.nik)}</h3><span class="status draft">DRAFT</span></div>
    <p class="muted">${esc(d.storeName)} · ${esc(d.department)} · ${esc(d.startDate)} s.d. ${esc(d.endDate)}</p>
