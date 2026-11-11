@@ -12,6 +12,10 @@
 .scoreGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.scoreBtn{border:2px solid #dce5ed;background:#fff;color:#42566b;padding:13px 6px}.scoreBtn.selected{border-color:var(--blue);background:#e8f3fb;color:var(--blue)}.scoreBtn b{display:block;font-size:22px}.sopCard{border:1px solid #e3eaf0;border-radius:14px;padding:16px;margin:12px 0}.sopCard h4{margin:0 0 7px}.sopCard p{font-size:13px;line-height:1.5;color:#526579;white-space:pre-wrap}.critical{color:#b9382d;font-size:11px;font-weight:900}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.notice{padding:13px 15px;border-radius:12px;background:#eaf4fb;color:#174d70;margin:12px 0;font-size:13px}.empty{text-align:center;color:var(--muted);padding:28px}.formRow{display:grid;grid-template-columns:1fr 1fr;gap:12px}.footer{text-align:center;color:#8795a5;font-size:12px;padding:30px}
 @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
 @media(max-width:560px){.wrap{padding:14px}.hero{padding:22px 18px;min-height:160px}.heroTag{display:none}.grid{gap:9px}.metric{padding:14px}.metric strong{font-size:25px}.panel{padding:16px}.formRow{grid-template-columns:1fr}.nav{display:grid;grid-template-columns:1fr 1fr}.nav button{padding:12px 7px;font-size:12px}.scoreBtn{padding:11px 3px}.scoreBtn b{font-size:20px}}
+
+.draftCategory{padding:8px 10px;margin:5px 0;background:#edf4fa;border-radius:8px;display:flex;justify-content:space-between;gap:8px}
+.status.draft{background:#fff1d6;color:#8a5a00;padding:4px 9px;border-radius:20px;font-size:12px;font-weight:700}
+.rowBetween{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -44,9 +48,9 @@ const CONFIG_API_URL = 'https://script.google.com/macros/s/AKfycbwaSZxh5mXdzWf_U
 // Isi dengan URL deployment Web App yang berakhiran /exec.
 // Contoh format: https://script.google.com/macros/s/AKfy.../exec
 
-let session = null, data = null, currentPage = 'dashboard', selectedScores = {};
+let session = null, data = null, currentPage = 'dashboard', selectedScores = {}, activeDraft = null, activeDraftCategory = '';
 const menu = [
- ['dashboard','Dashboard'],['program','Weekly Program'],['input','Input Training'],
+ ['dashboard','Dashboard'],['program','Weekly Program'],['input','Input Training'],['drafts','Draft Training'],
  ['crew','Master Crew'],['sop','SOP Library'],['report','Kesimpulan'],
  ['history','Training History'],['users','User Access']
 ];
@@ -82,6 +86,8 @@ async function refreshData(){
  data=await api(authPayload({action:'bootstrap'}));
  const report=await api(authPayload({action:'getReport'}));
  data.details=report.details||[];
+ const draftData=await api(authPayload({action:'getDrafts'}));
+ data.drafts=draftData.drafts||[];
 }
 function showApp(){
  document.getElementById('loginView').classList.add('hidden');
@@ -93,14 +99,14 @@ function logout(){session=null;data=null;document.getElementById('appView').clas
 function render(){
  const nav=document.getElementById('nav');nav.innerHTML='';
  const visibleMenu = session.role === 'TL'
-   ? menu.filter(m => ['dashboard','input','sop','report'].includes(m[0]))
+   ? menu.filter(m => ['dashboard','input','drafts','sop','report'].includes(m[0]))
    : menu;
  visibleMenu.forEach(m=>{
   const b=document.createElement('button');b.textContent=m[1];b.className=currentPage===m[0]?'active':'';
   b.onclick=()=>{currentPage=m[0];render()};nav.appendChild(b);
  });
  const page=document.getElementById('page');
- const fn={dashboard:dashboardPage,program:programPage,input:inputPage,crew:crewPage,sop:sopPage,report:reportPage,history:historyPage,users:usersPage};
+ const fn={dashboard:dashboardPage,program:programPage,input:inputPage,drafts:draftsPage,crew:crewPage,sop:sopPage,report:reportPage,history:historyPage,users:usersPage};
  page.innerHTML='';page.appendChild(fn[currentPage]());
 }
 function el(tag,cls,html){const x=document.createElement(tag);if(cls)x.className=cls;if(html!==undefined)x.innerHTML=html;return x;}
@@ -221,7 +227,9 @@ function inputPage(){
    <div class="field"><label>Kendala Selama Training</label><textarea id="iChallenge" placeholder="Tuliskan kendala atau materi yang masih sulit dipahami..." required></textarea></div>
    <div class="field"><label>Rencana Tindak Lanjut / Coaching</label><textarea id="iFollowUp" placeholder="Tuliskan rencana coaching, praktik ulang, atau observasi..." required></textarea></div>
    <div class="field"><label>Catatan Training Tambahan (opsional)</label><textarea id="iNotes" placeholder="Catatan pelaksanaan training..."></textarea></div>
-   <div class="actions"><button class="primary" id="submitTrainingBtn" type="button">SELESAIKAN & SIMPAN HASIL</button>
+   <div class="actions">
+   <button class="secondary" id="saveDraftBtn" type="button">SIMPAN MATERI KE DRAFT</button>
+   <button class="primary" id="submitTrainingBtn" type="button">SELESAIKAN & SIMPAN HASIL</button>
    <button class="secondary" id="editTrainingBtn" type="button">UBAH PILIHAN</button></div>
    <p id="inputMsg" class="muted"></p>
   </div>
@@ -383,8 +391,145 @@ function inputPage(){
  crew.onchange=()=>{root.querySelector('#iCrewName').value=crew.options[crew.selectedIndex]?.text||'';unlockSetup();};
  startBtn.onclick=startTraining;
  root.querySelector('#submitTrainingBtn').onclick=submitTraining;
+ root.querySelector('#saveDraftBtn').onclick=saveCurrentCategoryDraft;
  root.querySelector('#editTrainingBtn').onclick=unlockSetup;
  loadCategories();
+ if(activeDraft){
+  (async()=>{
+   dept.value=activeDraft.department;
+   loadCategories();
+   await loadCrew();
+   store.value=activeDraft.storeId;
+   if(isTL) store.disabled=true;
+   crew.value=activeDraft.nik;
+   startDate.value=activeDraft.startDate;
+   endDate.value=activeDraft.endDate;
+   const existingCats=Object.keys(activeDraft.categories||{});
+   const allCats=[...new Set((data.sops||[]).filter(s=>
+    String(s.department||'').toUpperCase()===String(activeDraft.department).toUpperCase() &&
+    String(s.status||'ACTIVE').toUpperCase()!=='INACTIVE'
+   ).map(s=>s.category))].sort();
+   const nextCat=activeDraftCategory || allCats.find(c=>!existingCats.includes(c)) || allCats[0] || '';
+   category.value=nextCat;
+   if(category.value){
+    startTraining();
+    const saved=(activeDraft.categories||{})[category.value];
+    if(saved){
+     saved.evaluations.forEach(ev=>{
+      selectedScores[ev.sopId]=Number(ev.score);
+      const card=area.querySelector(`[data-sop-id="${CSS.escape(ev.sopId)}"]`);
+      if(card){
+       const btn=card.querySelector(`.scoreBtn[data-score="${Number(ev.score)}"]`);
+       if(btn)btn.classList.add('selected');
+       const detail=(data.sops||[]).find(s=>String(s.sopId)===String(ev.sopId));
+       card.querySelector('.short').value=ev.shortcoming||'';
+       card.querySelector('.action').value=ev.action||'';
+      }
+     });
+    }
+    msg('setupMsg','Draft dimuat. Pilih kategori lain untuk menambahkan materi, atau simpan kembali kategori ini.');
+   }
+   activeDraftCategory='';
+  })().catch(e=>msg('setupMsg','Gagal membuka draft: '+e.message));
+ }
+ return root;
+}
+async function saveCurrentCategoryDraft(){ 
+ const department=val('iDept'),category=val('iCategory'),nik=val('iCrew');
+ const cards=[...document.querySelectorAll('#evalArea .sopCard')];
+ if(!department||!category||!nik||!val('iStartDate')||!val('iEndDate')){
+  msg('inputMsg','Lengkapi data training sebelum menyimpan draft.');return;
+ }
+ if(!cards.length||cards.some(c=>!selectedScores[c.dataset.sopId])){
+  msg('inputMsg','Berikan nilai pada seluruh materi SOP kategori ini sebelum menyimpan draft.');return;
+ }
+ const evaluations=cards.map(c=>({
+  sopId:c.dataset.sopId,score:selectedScores[c.dataset.sopId],
+  shortcoming:c.querySelector('.short').value,
+  action:c.querySelector('.action').value
+ }));
+ const btn=document.getElementById('saveDraftBtn');
+ btn.disabled=true;btn.textContent='MENYIMPAN DRAFT...';
+ try{
+  const r=await api(authPayload({
+   action:'saveDraft',draftId:activeDraft?.draftId||'',
+   department,category,nik,startDate:val('iStartDate'),endDate:val('iEndDate'),
+   evaluations,notes:val('iNotes')
+  }));
+  activeDraft=await (async()=>{const x=await api(authPayload({action:'getDraft',draftId:r.draftId}));return x.draft;})();
+  alert('Materi '+category+' berhasil disimpan ke Draft Training.');
+  await refreshData();
+  activeDraftCategory='';
+  currentPage='drafts';
+  render();
+ }catch(e){
+  msg('inputMsg',e.message);
+  btn.disabled=false;btn.textContent='SIMPAN MATERI KE DRAFT';
+ }
+}
+async function resumeTrainingDraft(draftId,category){
+ try{
+  const r=await api(authPayload({action:'getDraft',draftId}));
+  activeDraft=r.draft;activeDraftCategory=category||'';
+  currentPage='input';render();
+ }catch(e){alert(e.message);}
+}
+function draftsPage(){
+ const root=el('div');
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Draft Training</h3>
+  <p class="muted">Simpan beberapa kategori materi dalam satu draft untuk crew dan rentang training yang sama. Materi yang tersimpan sebagai draft belum dihitung sebagai hasil final.</p>`));
+ const drafts=data.drafts||[];
+ if(!drafts.length){
+  root.appendChild(el('div','panel','<div class="empty">Belum ada draft training. Mulai dari menu Input Training lalu pilih SIMPAN MATERI KE DRAFT.</div>'));
+  return root;
+ }
+ drafts.forEach(d=>{
+  const cats=Object.keys(d.categories||{});
+  const catHtml=cats.map(c=>`<div class="draftCategory"><b>${esc(c)}</b> <span class="status ${String(d.categories[c].status).toUpperCase()==='FINAL'?'success':'draft'}">${String(d.categories[c].status).toUpperCase()==='FINAL'?'SELESAI':'DRAFT'}</span></div>`).join('');
+  const allCats=[...new Set((data.sops||[]).filter(s=>
+   String(s.department||'').toUpperCase()===String(d.department).toUpperCase() &&
+   String(s.status||'ACTIVE').toUpperCase()!=='INACTIVE'
+  ).map(s=>s.category))].sort();
+  const pending=allCats.filter(c=>!cats.includes(c));
+  const card=el('div','panel',`
+   <div class="rowBetween"><h3>${esc(d.crewName)} • ${esc(d.nik)}</h3><span class="status draft">DRAFT</span></div>
+   <p class="muted">${esc(d.storeName)} · ${esc(d.department)} · ${esc(d.startDate)} s.d. ${esc(d.endDate)}</p>
+   <p><b>Materi tersimpan (${cats.length}):</b></p>${catHtml||'<p class="muted">Belum ada kategori tersimpan.</p>'}
+   <p><b>Materi belum disimpan (${pending.length}):</b> ${pending.map(esc).join(', ')||'Semua kategori sudah memiliki draft.'}</p>
+   <div class="formRow">
+    <div class="field"><label>Kesimpulan Pemahaman Crew</label><textarea class="dConclusion" placeholder="Kesimpulan pemahaman crew..."></textarea></div>
+    <div class="field"><label>Kendala Selama Training</label><textarea class="dChallenge" placeholder="Kendala selama training..."></textarea></div>
+   </div>
+   <div class="field"><label>Rencana Tindak Lanjut / Coaching</label><textarea class="dFollowUp" placeholder="Rencana tindak lanjut..."></textarea></div>
+   <div class="actions">
+    <button class="secondary dContinue" type="button" ${pending.length?'':'disabled'}>TAMBAH / LANJUTKAN MATERI</button>
+    <button class="primary dFinalize" type="button" ${cats.some(c=>String(d.categories[c].status).toUpperCase()!=='FINAL')?'':'disabled'}>FINALISASI MATERI DRAFT</button>
+    <button class="secondary dClose" type="button" ${cats.length && cats.every(c=>String(d.categories[c].status).toUpperCase()==='FINAL')?'':'disabled'}>TUTUP DRAFT</button>
+   </div>
+   <p class="muted dMsg"></p>
+  `);
+  card.querySelector('.dContinue').onclick=()=>resumeTrainingDraft(d.draftId,pending[0]||'');
+  card.querySelector('.dFinalize').onclick=async()=>{
+   const conclusion=card.querySelector('.dConclusion').value.trim();
+   const challenge=card.querySelector('.dChallenge').value.trim();
+   const follow=card.querySelector('.dFollowUp').value.trim();
+   if(!conclusion||!challenge||!follow){card.querySelector('.dMsg').textContent='Lengkapi kesimpulan, kendala, dan tindak lanjut sebelum finalisasi.';return;}
+   const btn=card.querySelector('.dFinalize');btn.disabled=true;btn.textContent='MEMFINALISASI...';
+   try{
+    const res=await api(authPayload({action:'finalizeDraft',draftId:d.draftId,trainingConclusion:conclusion,trainingChallenge:challenge,followUpPlan:follow}));
+    alert(res.message+' '+res.results.map(x=>x.category+': '+x.average).join(' | '));
+    activeDraft=null;await refreshData();currentPage='drafts';render();
+   }catch(e){card.querySelector('.dMsg').textContent=e.message;btn.disabled=false;btn.textContent='FINALISASI SEMUA MATERI';}
+  };
+  card.querySelector('.dClose').onclick=async()=>{
+   if(!confirm('Tutup draft ini? Draft tidak dapat ditambahkan materi lagi setelah ditutup.'))return;
+   try{
+    const res=await api(authPayload({action:'closeDraft',draftId:d.draftId}));
+    alert(res.message);await refreshData();render();
+   }catch(e){card.querySelector('.dMsg').textContent=e.message;}
+  };
+  root.appendChild(card);
+ });
  return root;
 }
 async function submitTraining(){
@@ -423,6 +568,7 @@ async function submitTraining(){
    evaluations,notes:val('iNotes')
   }));
   alert(`${r.message}\nAttempt: ${r.attempt}\nRata-rata: ${r.average}\nKesimpulan: ${r.status}`);
+  activeDraft=null;
   await refreshData();
   currentPage='dashboard';
   render();
