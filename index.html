@@ -93,7 +93,7 @@ function logout(){session=null;data=null;document.getElementById('appView').clas
 function render(){
  const nav=document.getElementById('nav');nav.innerHTML='';
  const visibleMenu = session.role === 'TL'
-   ? menu.filter(m => ['dashboard','input','sop'].includes(m[0]))
+   ? menu.filter(m => ['dashboard','input','sop','report'].includes(m[0]))
    : menu;
  visibleMenu.forEach(m=>{
   const b=document.createElement('button');b.textContent=m[1];b.className=currentPage===m[0]?'active':'';
@@ -250,17 +250,36 @@ function inputPage(){
   loadCrew();
   unlockSetup();
  }
- function loadCrew(){
-  const selectedStoreName = session.role === 'TL'
-   ? String(session.storeName||'').trim().toUpperCase()
-   : String((data.stores||[]).find(s=>String(s.storeId)===String(store.value))?.storeName||'').trim().toUpperCase();
-  const list=(data.crew||[]).filter(c=>
-   (String(c.storeId||'').trim().toUpperCase()===String(store.value||'').trim().toUpperCase() ||
-    String(c.storeName||'').trim().toUpperCase()===selectedStoreName) &&
-   String(c.department||'').trim().toUpperCase()===String(dept.value||'').trim().toUpperCase() &&
-   String(c.status||'ACTIVE').trim().toUpperCase()==='ACTIVE'
-  ).sort((a,b)=>a.name.localeCompare(b.name));
-  crew.innerHTML='<option value="">Pilih crew</option>'+options(list,c=>c.nik,c=>c.name+' • '+c.nik);
+ async function loadCrew(){
+  crew.innerHTML='<option value="">Memuat daftar crew...</option>';
+  crew.disabled=true;
+  clearEvaluation();
+  try{
+   const result=await api(authPayload({
+    action:'getCrewOptions',
+    storeId:store.value,
+    department:dept.value
+   }));
+   const list=result.crew||[];
+   crew.innerHTML='<option value="">Pilih crew</option>'+
+    options(list,c=>c.nik,c=>c.name+' • '+c.nik);
+   if(!list.length){
+    crew.innerHTML='<option value="">Crew tidak ditemukan</option>';
+    msg('setupMsg',
+     `Tidak ada crew ${dept.value} untuk ${result.storeName||store.value}. `+
+     `Baris MASTER CREW: ${result.diagnostic?.masterCrewRows??'?'}, `+
+     `baris store cocok: ${result.diagnostic?.matchingStoreRows??'?'}. `+
+     'Pastikan STORE ID, DEPARTMENT, NIK, dan NAMA terisi di MASTER CREW.'
+    );
+   }else{
+    msg('setupMsg',`${list.length} crew ${dept.value} ditemukan untuk ${result.storeName||store.value}.`);
+   }
+  }catch(err){
+   crew.innerHTML='<option value="">Gagal memuat crew</option>';
+   msg('setupMsg','Gagal memuat daftar crew: '+err.message);
+  }finally{
+   crew.disabled=false;
+  }
   unlockSetup();
  }
  function buildEvaluation(){
@@ -422,8 +441,18 @@ async function saveSop(){
 }
 function reportPage(){
  const root=el('div');
- const results=data.results||[];
- const details=data.details||[];
+ const allResults=data.results||[];
+ const allDetails=data.details||[];
+ const results=session.role==='TL'
+  ? allResults.filter(r =>
+     String(r.storeId||'').trim().toUpperCase()===String(session.storeId||'').trim().toUpperCase() ||
+     String(r.storeName||'').trim().toUpperCase()===String(session.storeName||'').trim().toUpperCase()
+    )
+  : allResults;
+ const ownNiks=new Set(results.map(r=>String(r.nik||'')));
+ const details=session.role==='TL'
+  ? allDetails.filter(d => ownNiks.has(String(d.nik||'')))
+  : allDetails;
  const understood=results.filter(r=>r.status==='SUDAH MEMAHAMI').length;
  const follow=results.filter(r=>r.status!=='SUDAH MEMAHAMI').length;
  const avg=results.length?(results.reduce((n,r)=>n+Number(r.average||0),0)/results.length).toFixed(2):'0.00';
@@ -436,7 +465,7 @@ function reportPage(){
  ].forEach(x=>grid.appendChild(x));
  root.appendChild(grid);
  root.appendChild(el('div','panel',`<h3 class="sectionTitle">Kesimpulan Pemahaman SOP</h3>
-  <p class="muted">Ringkasan hasil refresh training berdasarkan materi yang telah dievaluasi. Status pemahaman memperhitungkan nilai rata-rata dan temuan pada SOP critical.</p>
+  <p class="muted">${session.role==='TL'?'Menampilkan hasil evaluasi training crew di '+esc(session.storeName||'store kamu')+'. Nilai pemahaman diinput pada tahap Evaluasi SOP setelah tombol MULAI TRAINING.':'Ringkasan hasil refresh training seluruh store berdasarkan materi yang telah dievaluasi.'} Status pemahaman memperhitungkan nilai rata-rata dan temuan pada SOP critical.</p>
   ${table(['Tanggal','Department','Kategori Materi','Crew','Store','Rata-rata','Kesimpulan'],results.slice().reverse().map(r=>[
    r.trainingDate,r.department,r.section,r.crewName,r.storeName,
    Number(r.average||0).toFixed(2),statusPill(r.status)
