@@ -1,1 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOP Refresh Training Report</title>
+<style>
+:root{--navy:#102a43;--blue:#1769aa;--cyan:#25a6c7;--gold:#f5b544;--bg:#f3f6fa;--ink:#243447;--muted:#6b7c93;--white:#fff;--green:#16865b;--red:#c0392b;--shadow:0 12px 32px #102a4314}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink)}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-weight:700}.primary{background:var(--blue);color:#fff}.secondary{background:#e8f1f8;color:var(--navy)}.danger{background:#fff0ef;color:var(--red)}.muted{color:var(--muted)}.hidden{display:none!important}
+.hero{min-height:190px;padding:28px 5%;color:#fff;background:linear-gradient(100deg,#102a43ed,#1769aacc),url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1800&q=80') center/cover;display:flex;align-items:center;justify-content:space-between;gap:20px}.hero h1{margin:0 0 8px;font-size:clamp(24px,4vw,38px);letter-spacing:.4px}.hero p{margin:0;color:#e4edf5}.heroTag{background:#ffffff20;border:1px solid #ffffff55;border-radius:30px;padding:10px 15px;font-size:12px;font-weight:800;letter-spacing:1px}
+.wrap{max-width:1500px;margin:auto;padding:24px}.loginWrap{max-width:440px;margin:7vh auto;padding:0 18px}.panel,.card{background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:22px}.loginPanel{padding:30px}.field{display:flex;flex-direction:column;gap:7px;margin:13px 0}.field label{font-size:13px;font-weight:800;color:#42566b}.field input,.field select,.field textarea{width:100%;padding:12px 13px;border:1px solid #d9e2ec;border-radius:10px;background:#fff;outline:none}.field textarea{min-height:90px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px #1769aa18}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.nav button{background:#e7edf3;color:#34495e}.nav button.active{background:var(--navy);color:#fff}.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0}.metric{padding:18px;border-radius:16px;background:#fff;box-shadow:var(--shadow);border-left:4px solid var(--cyan)}.metric small{color:var(--muted);font-weight:700}.metric strong{display:block;font-size:30px;margin-top:8px;color:var(--navy)}.sectionTitle{font-size:19px;margin:0 0 14px;color:var(--navy)}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}.tableWrap{overflow:auto;border:1px solid #e6edf3;border-radius:12px}table{border-collapse:collapse;width:100%;min-width:650px;background:#fff}th,td{padding:11px 12px;text-align:left;border-bottom:1px solid #edf1f5;font-size:13px}th{background:#edf4f9;color:#34495e;position:sticky;top:0}tr:last-child td{border-bottom:0}.pill{display:inline-block;padding:5px 9px;border-radius:30px;font-size:11px;font-weight:800;background:#e8f1f8;color:#1769aa}.pill.good{background:#e4f6ed;color:#16865b}.pill.warn{background:#fff3d9;color:#946200}.pill.bad{background:#ffebe9;color:#b9382d}
+.scoreGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.scoreBtn{border:2px solid #dce5ed;background:#fff;color:#42566b;padding:13px 6px}.scoreBtn.selected{border-color:var(--blue);background:#e8f3fb;color:var(--blue)}.scoreBtn b{display:block;font-size:22px}.sopCard{border:1px solid #e3eaf0;border-radius:14px;padding:16px;margin:12px 0}.sopCard h4{margin:0 0 7px}.sopCard p{font-size:13px;line-height:1.5;color:#526579;white-space:pre-wrap}.critical{color:#b9382d;font-size:11px;font-weight:900}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.notice{padding:13px 15px;border-radius:12px;background:#eaf4fb;color:#174d70;margin:12px 0;font-size:13px}.empty{text-align:center;color:var(--muted);padding:28px}.formRow{display:grid;grid-template-columns:1fr 1fr;gap:12px}.footer{text-align:center;color:#8795a5;font-size:12px;padding:30px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+@media(max-width:560px){.wrap{padding:14px}.hero{padding:22px 18px;min-height:160px}.heroTag{display:none}.grid{gap:9px}.metric{padding:14px}.metric strong{font-size:25px}.panel{padding:16px}.formRow{grid-template-columns:1fr}.nav{display:grid;grid-template-columns:1fr 1fr}.nav button{padding:12px 7px;font-size:12px}.scoreBtn{padding:11px 3px}.scoreBtn b{font-size:20px}}
+</style>
+</head>
+<body>
+<div id="loginView" class="loginWrap">
+  <div class="panel loginPanel">
+    <div style="font-size:12px;font-weight:900;color:#1769aa;letter-spacing:1.5px">AREA OPERATIONS SYSTEM</div>
+    <h1 style="color:#102a43;margin:8px 0">SOP REFRESH<br>TRAINING REPORT</h1>
+    <p class="muted">Improve Knowledge. Improve Performance.</p>
+    <div class="field"><label>User ID</label><input id="loginId" autocomplete="username" placeholder="Contoh: TL001"></div>
+    <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Masukkan password"></div>
+    <button class="primary" style="width:100%;padding:15px" onclick="login()">LOGIN</button>
+    <p id="loginMsg" class="muted" style="font-size:13px"></p>
+  </div>
+</div>
+<div id="appView" class="hidden">
+  <header class="hero">
+    <div><div style="font-size:11px;letter-spacing:2px;font-weight:900;color:#bfe7f5">AREA TRAINING MONITORING</div><h1>SOP REFRESH TRAINING REPORT</h1><p>Improve Knowledge. Improve Performance.</p></div>
+    <div class="heroTag">WEEKLY SOP REFRESH • V1.0</div>
+  </header>
+  <main class="wrap">
+    <div class="topline"><div><b id="welcome"></b><div id="scope" class="muted" style="font-size:12px;margin-top:4px"></div></div><button class="secondary" onclick="logout()">LOGOUT</button></div>
+    <nav class="nav" id="nav"></nav>
+    <section id="page"></section>
+  </main>
+  <div class="footer">SOP REFRESH TRAINING REPORT V1.0 • Area Operations</div>
+</div>
+<script>
+/* PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL BELOW */
+const CONFIG_API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+let session = null, data = null, currentPage = 'dashboard', selectedScores = {};
+const menu = [
+ ['dashboard','Dashboard'],['program','Weekly Program'],['input','Input Training'],
+ ['crew','Master Crew'],['sop','Master SOP'],['report','Evaluation Report'],
+ ['history','Training History'],['users','User Access']
+];
+function api(payload){
+ return new Promise((resolve,reject)=>{
+  if(!CONFIG_API_URL.startsWith('https://script.google.com/')) return reject(new Error('URL Apps Script belum dipasang di index.html.'));
+  const cb='cb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+  const script=document.createElement('script');
+  const timer=setTimeout(()=>{cleanup();reject(new Error('Server timeout. Periksa deployment Apps Script.'));},30000);
+  function cleanup(){clearTimeout(timer);delete window[cb];script.remove();}
+  window[cb]=(res)=>{cleanup();res&&res.ok?resolve(res):reject(new Error(res&&res.error?res.error:'Request gagal.'));};
+  script.onerror=()=>{cleanup();reject(new Error('Tidak dapat terhubung ke server Apps Script.'))};
+  const params=new URLSearchParams({callback:cb,payload:JSON.stringify(payload)});
+  script.src=CONFIG_API_URL+'?'+params.toString();
+  document.body.appendChild(script);
+ });
+}
+function authPayload(extra={}){return {...extra,userId:session.userId,password:session.password};}
+async function login(){
+ const userId=val('loginId').trim().toUpperCase(),password=val('loginPass');
+ msg('loginMsg','Memeriksa akun...');
+ try{
+  const r=await api({action:'login',userId,password});
+  session={userId,password,...r.user};
+  await refreshData();showApp();render();
+ }catch(e){msg('loginMsg',e.message);}
+}
+async function refreshData(){
+ data=await api(authPayload({action:'bootstrap'}));
+ const report=await api(authPayload({action:'getReport'}));
+ data.details=report.details||[];
+}
+function showApp(){
+ document.getElementById('loginView').classList.add('hidden');
+ document.getElementById('appView').classList.remove('hidden');
+ document.getElementById('welcome').textContent=session.fullName+' • '+session.role;
+ document.getElementById('scope').textContent=session.role==='AM'?'Akses seluruh area':'Store: '+session.storeName;
+}
+function logout(){session=null;data=null;document.getElementById('appView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');}
+function render(){
+ const nav=document.getElementById('nav');nav.innerHTML='';
+ menu.filter(m=>session.role==='AM'||!['crew','sop','program','users'].includes(m[0])).forEach(m=>{
+  const b=document.createElement('button');b.textContent=m[1];b.className=currentPage===m[0]?'active':'';
+  b.onclick=()=>{currentPage=m[0];render()};nav.appendChild(b);
+ });
+ const page=document.getElementById('page');
+ const fn={dashboard:dashboardPage,program:programPage,input:inputPage,crew:crewPage,sop:sopPage,report:reportPage,history:historyPage,users:usersPage};
+ page.innerHTML='';page.appendChild(fn[currentPage]());
+}
+function el(tag,cls,html){const x=document.createElement(tag);if(cls)x.className=cls;if(html!==undefined)x.innerHTML=html;return x;}
+function val(id){return document.getElementById(id)?.value||''}
+function msg(id,t){const x=document.getElementById(id);if(x)x.textContent=t}
+function metric(label,value){return el('div','metric',`<small>${esc(label)}</small><strong>${esc(value)}</strong>`)}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function options(items,valueFn,labelFn,selected=''){return items.map(x=>`<option value="${esc(valueFn(x))}" ${String(valueFn(x))===String(selected)?'selected':''}>${esc(labelFn(x))}</option>`).join('')}
+function field(label,id,placeholder='',type='text'){return `<div class="field"><label>${label}</label><input id="${id}" type="${type}" placeholder="${placeholder}"></div>`}
+function selectField(label,id,opts){return `<div class="field"><label>${label}</label><select id="${id}">${opts}</select></div>`}
+function dateNow(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'});}
+function dashboardPage(){
+ const root=el('div');
+ const results=data.results||[],crew=data.crew||[];
+ const latestByCrew={};results.forEach(r=>{const k=r.programId+'|'+r.nik;if(!latestByCrew[k]||latestByCrew[k].attempt<r.attempt)latestByCrew[k]=r;});
+ const latest=Object.values(latestByCrew),understood=latest.filter(r=>r.status==='SUDAH MEMAHAMI').length,follow=latest.filter(r=>r.status!=='SUDAH MEMAHAMI').length;
+ const targetPrograms=(data.programs||[]).filter(p=>p.status==='ACTIVE');
+ const activeTarget=targetPrograms.reduce((n,p)=>n+crew.filter(c=>c.department===p.department&&c.section===p.section).length,0);
+ const done=latest.length,percent=activeTarget?Math.min(100,Math.round(done/activeTarget*100)):0;
+ const grid=el('div','grid');[metric('ACTIVE CREW',crew.length),metric('ACTIVE PROGRAM',targetPrograms.length),metric('SUDAH MEMAHAMI',understood),metric('PERLU FOLLOW-UP',follow)].forEach(x=>grid.appendChild(x));root.appendChild(grid);
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Weekly Training Overview</h3><div style="font-size:13px;color:#66788a">Target indikatif dari program aktif • ${done} hasil evaluasi tercatat</div><div style="height:13px;background:#e7edf3;border-radius:20px;margin:14px 0;overflow:hidden"><div style="height:100%;width:${percent}%;background:linear-gradient(90deg,#1769aa,#25a6c7);border-radius:20px"></div></div><b>${percent}% completion indikatif</b><p class="muted" style="font-size:12px">Catatan: angka completion menghitung hasil evaluasi crew yang sudah masuk dibanding target aktif. Jika ada beberapa program aktif dengan section yang sama, target dapat terhitung lebih dari satu kali.</p>`));
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Program Aktif</h3>${targetPrograms.length?table(['Program','Periode','Department','Section','Target'],targetPrograms.map(p=>[p.name,p.weekLabel,p.department,p.section,p.targetCount])):'<div class="empty">Belum ada program aktif.</div>'}`));
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Evaluasi Terbaru</h3>${table(['Tanggal','Crew','Store','Section','Attempt','Average','Status'],results.slice().reverse().slice(0,10).map(r=>[r.trainingDate,r.crewName,r.storeName,r.section,r.attempt,r.average.toFixed(2),statusPill(r.status)]),true)}`));
+ return root;
+}
+function table(headers,rows,rawLast=false){
+ if(!rows.length)return '<div class="empty">Belum ada data.</div>';
+ return `<div class="tableWrap"><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>'<tr>'+row.map((v,i)=>`<td>${rawLast&&i===row.length-1?v:esc(v)}</td>`).join('')+'</tr>').join('')}</tbody></table></div>`;
+}
+function statusPill(s){let c=s==='SUDAH MEMAHAMI'?'good':s.includes('KRITIS')||s==='RETRAINING'||s==='BELUM MEMAHAMI'?'bad':'warn';return `<span class="pill ${c}">${esc(s)}</span>`;}
+function programPage(){
+ const root=el('div');
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Buat Weekly Program</h3>
+ <div class="formRow">${field('Nama Program','pName','Contoh: SOP Refresh Week 46')}${field('Label Minggu','pWeek','Week 46 - 2026')}</div>
+ <div class="formRow">${field('Tanggal Mulai','pStart','', 'date')}${field('Tanggal Akhir','pEnd','','date')}</div>
+ <div class="formRow">${selectField('Department','pDept','<option>FRONT</option><option>BACK</option>')}${selectField('Section','pSection','')}</div>
+ <div class="field"><label>Pilih SOP (bisa lebih dari satu)</label><div id="pSopList" class="notice">Pilih department dan section untuk memuat SOP.</div></div>
+ <div class="actions"><button class="primary" onclick="saveProgram()">SIMPAN PROGRAM</button></div><p id="programMsg" class="muted"></p>`));
+ const dept=root.querySelector('#pDept'),section=root.querySelector('#pSection'),list=root.querySelector('#pSopList');
+ function loadSections(){const sections=[...new Set(data.sops.filter(s=>s.department===dept.value).map(s=>s.section))];section.innerHTML=options(sections,x=>x,x=>x);loadSops();}
+ function loadSops(){const sops=data.sops.filter(s=>s.department===dept.value&&s.section===section.value);list.innerHTML=sops.length?sops.map(s=>`<label style="display:block;padding:7px"><input type="checkbox" value="${esc(s.sopId)}" class="pSop"> ${esc(s.code)} - ${esc(s.title)} ${s.critical?'(CRITICAL)':''}</label>`).join(''):'Tidak ada SOP aktif untuk section ini.';}
+ dept.onchange=loadSections;section.onchange=loadSops;loadSections();
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Daftar Program</h3>${table(['Program ID','Program','Week','Section','Target','Status'],data.programs.map(p=>[p.programId,p.name,p.weekLabel,p.section,p.targetCount,p.status]))}`));
+ return root;
+}
+async function saveProgram(){
+ const sopIds=[...document.querySelectorAll('.pSop:checked')].map(x=>x.value);
+ try{const r=await api(authPayload({action:'saveProgram',name:val('pName'),weekLabel:val('pWeek'),startDate:val('pStart'),endDate:val('pEnd'),department:val('pDept'),section:val('pSection'),sopIds}));msg('programMsg',r.message+' Target crew: '+r.targetCount);await refreshData();render();}
+ catch(e){msg('programMsg',e.message);}
+}
+function inputPage(){
+ const root=el('div');
+ const programs=data.programs||[];
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Input Evaluasi Training</h3><div class="notice">Nilai setiap SOP secara individual. Nilai 1–2 pada SOP critical otomatis menghasilkan follow-up kritis, walaupun rata-rata keseluruhan tinggi.</div>
+ ${selectField('Program Aktif','iProgram',options(programs,p=>p.programId,p=>p.name+' • '+p.section))}
+ ${selectField('Store','iStore',options(data.stores,s=>s.storeId,s=>s.storeName,session.storeId))}
+ ${selectField('Crew','iCrew','<option value="">Pilih program dan store terlebih dahulu</option>')}
+ <div id="evalArea"></div>
+ <div class="field"><label>Catatan Training (opsional)</label><textarea id="iNotes" placeholder="Catatan pelaksanaan training..."></textarea></div>
+ <div class="actions"><button class="primary" onclick="submitTraining()">SUBMIT HASIL TRAINING</button></div><p id="inputMsg" class="muted"></p>`));
+ const store=root.querySelector('#iStore');if(session.role==='TL'){store.value=session.storeId;store.disabled=true;}
+ const program=root.querySelector('#iProgram'),crew=root.querySelector('#iCrew'),area=root.querySelector('#evalArea');
+ function loadCrew(){
+  const p=programs.find(x=>x.programId===program.value);
+  const list=data.crew.filter(c=>p&&c.storeId===store.value&&c.department===p.department&&c.section===p.section);
+  crew.innerHTML='<option value="">Pilih crew</option>'+options(list,c=>c.nik,c=>c.name+' • '+c.nik);
+  area.innerHTML='';selectedScores={};
+ }
+ function loadEval(){
+  const p=programs.find(x=>x.programId===program.value),c=data.crew.find(x=>x.nik===crew.value);
+  area.innerHTML='';selectedScores={};
+  if(!p||!c)return;
+  const sops=data.sops.filter(s=>p.sopIds.includes(s.sopId)).sort((a,b)=>a.sequence-b.sequence);
+  sops.forEach(s=>{
+   const card=el('div','sopCard',`<h4>${esc(s.code)} — ${esc(s.title)} ${s.critical?'<span class="critical"> • CRITICAL SOP</span>':''}</h4><p>${esc(s.standard)}</p><div class="scoreGrid">${[[1,'Belum'],[2,'Cukup'],[3,'Paham'],[4,'Excellent']].map(([n,t])=>`<button type="button" class="scoreBtn" data-score="${n}"><b>${n}</b><small>${t}</small></button>`).join('')}</div><div class="field"><label>Kekurangan / Temuan (jika ada)</label><textarea class="short" placeholder="Apa yang belum sesuai?"></textarea></div><div class="field"><label>Action Plan / Coaching</label><textarea class="action" placeholder="Tindakan perbaikan atau coaching..."></textarea></div>`);
+   card.dataset.sopId=s.sopId;card.querySelectorAll('.scoreBtn').forEach(b=>b.onclick=()=>{card.querySelectorAll('.scoreBtn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');selectedScores[s.sopId]=Number(b.dataset.score);});
+   area.appendChild(card);
+  });
+ }
+ program.onchange=loadCrew;store.onchange=loadCrew;crew.onchange=loadEval;loadCrew();
+ return root;
+}
+async function submitTraining(){
+ const pId=val('iProgram'),nik=val('iCrew'),cards=[...document.querySelectorAll('.sopCard')];
+ if(!pId||!nik){msg('inputMsg','Pilih program dan crew terlebih dahulu.');return;}
+ if(cards.some(c=>!selectedScores[c.dataset.sopId])){msg('inputMsg','Semua poin SOP wajib diberikan nilai.');return;}
+ const evaluations=cards.map(c=>({sopId:c.dataset.sopId,score:selectedScores[c.dataset.sopId],shortcoming:c.querySelector('.short').value,action:c.querySelector('.action').value}));
+ try{const r=await api(authPayload({action:'submitEvaluation',programId:pId,nik,trainingDate:dateNow(),evaluations,notes:val('iNotes')}));msg('inputMsg',`${r.message} Attempt ${r.attempt} • Average ${r.average} • ${r.status}`);await refreshData();render();}
+ catch(e){msg('inputMsg',e.message);}
+}
+function crewPage(){
+ const root=el('div');
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Tambah / Update Master Crew</h3>
+ <div class="formRow">${field('NIK','cNik','Nomor induk crew')}${field('Nama Crew','cName','Nama lengkap')}</div>
+ <div class="formRow">${selectField('Store','cStore',options(data.stores,s=>s.storeId,s=>s.storeName))}${selectField('Department','cDept','<option>FRONT</option><option>BACK</option>')}</div>
+ <div class="formRow">${selectField('Section','cSection','')}${selectField('Status','cStatus','<option>ACTIVE</option><option>RESIGN</option>')}</div>
+ <div class="actions"><button class="primary" onclick="saveCrew()">SIMPAN CREW</button></div><p id="crewMsg" class="muted"></p>`));
+ const dept=root.querySelector('#cDept'),section=root.querySelector('#cSection');
+ function sections(){const arr=dept.value==='BACK'?['Bakaran','Masakan','Racikan','Checker']:['Minuman','Kasir','Order Taker','Runner','Host'];section.innerHTML=options(arr,x=>x,x=>x);}
+ dept.onchange=sections;sections();
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Master Crew Aktif</h3>${table(['NIK','Nama','Store','Department','Section','Status'],data.crew.map(c=>[c.nik,c.name,c.storeName,c.department,c.section,'ACTIVE']))}`));
+ return root;
+}
+async function saveCrew(){
+ try{const r=await api(authPayload({action:'saveCrew',nik:val('cNik'),name:val('cName'),storeId:val('cStore'),department:val('cDept'),section:val('cSection'),status:val('cStatus')}));msg('crewMsg',r.message);await refreshData();render();}
+ catch(e){msg('crewMsg',e.message);}
+}
+function sopPage(){
+ const root=el('div');
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Tambah / Update Master SOP</h3>
+ <div class="formRow">${selectField('Department','sDept','<option>BACK</option><option>FRONT</option>')}${selectField('Section','sSection','')}</div>
+ <div class="formRow">${field('Kode SOP','sCode','Contoh: BK-001')}${field('Judul SOP','sTitle','Nama standar kerja')}</div>
+ <div class="field"><label>Standard / Materi SOP</label><textarea id="sStandard" placeholder="Jelaskan standar dan langkah A-Z..."></textarea></div>
+ <div class="formRow">${field('Urutan','sSeq','1','number')}${selectField('Kategori','sCategory','<option>GENERAL</option><option>FOOD SAFETY</option><option>SERVICE</option><option>PRODUCT</option><option>HYGIENE</option>')}</div>
+ <div class="formRow">${selectField('Critical SOP?','sCritical','<option value="false">NO</option><option value="true">YES</option>')}${selectField('Status','sStatus','<option>ACTIVE</option><option>INACTIVE</option>')}</div>
+ <div class="actions"><button class="primary" onclick="saveSop()">SIMPAN SOP</button></div><p id="sopMsg" class="muted"></p>`));
+ const dept=root.querySelector('#sDept'),section=root.querySelector('#sSection');
+ function sections(){const arr=dept.value==='BACK'?['Bakaran','Masakan','Racikan','Checker']:['Minuman','Kasir','Order Taker','Runner','Host'];section.innerHTML=options(arr,x=>x,x=>x);}
+ dept.onchange=sections;sections();
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Daftar Master SOP</h3>${table(['Kode','Judul','Department','Section','Kategori','Critical','Status'],data.sops.map(s=>[s.code,s.title,s.department,s.section,s.category,s.critical?'YES':'NO','ACTIVE']))}`));
+ return root;
+}
+async function saveSop(){
+ try{const r=await api(authPayload({action:'saveSop',department:val('sDept'),section:val('sSection'),code:val('sCode'),title:val('sTitle'),standard:val('sStandard'),sequence:val('sSeq'),category:val('sCategory'),critical:val('sCritical')==='true',status:val('sStatus')}));msg('sopMsg',r.message);await refreshData();render();}
+ catch(e){msg('sopMsg',e.message);}
+}
+function reportPage(){
+ const root=el('div');const results=data.results||[];
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Evaluation Report</h3>${table(['Tanggal','Program','Crew','NIK','Store','Section','Attempt','Average','Status'],results.slice().reverse().map(r=>[r.trainingDate,r.programName,r.crewName,r.nik,r.storeName,r.section,r.attempt,r.average.toFixed(2),statusPill(r.status)]),true)}`));
+ const details=data.details||[];
+ const weak=details.filter(d=>d.score<=2).sort((a,b)=>a.score-b.score);
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">SOP Points Need Improvement (Score 1–2)</h3>${table(['Crew','Store','SOP','Score','Critical','Shortcoming','Action Plan'],weak.map(d=>[d.crewName,d.storeId,d.sopCode+' - '+d.sopTitle,d.score,d.critical,d.shortcoming,d.action]))}`));
+ return root;
+}
+function historyPage(){
+ const root=el('div');const results=data.results||[];
+ const grouped={};results.forEach(r=>{const k=r.nik+'|'+r.programId;if(!grouped[k])grouped[k]=[];grouped[k].push(r);});
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Training History & Retraining Progress</h3>${table(['Crew','NIK','Program','Week','Store','Attempt','Average','Status','Tanggal'],results.slice().sort((a,b)=>a.nik.localeCompare(b.nik)||a.attempt-b.attempt).map(r=>[r.crewName,r.nik,r.programName,r.weekLabel,r.storeName,r.attempt,r.average.toFixed(2),statusPill(r.status),r.trainingDate]),true)}`));
+ return root;
+}
+function usersPage(){
+ const root=el('div');
+ root.appendChild(el('div','panel',`<h3 class="sectionTitle">Update Password User</h3>${field('User ID','uId','AM001 / TL001')}${field('Password Baru','uPass','Minimal 6 karakter','password')}<div class="actions"><button class="primary" onclick="updatePassword()">UPDATE PASSWORD</button></div><p id="userMsg" class="muted"></p><div class="notice">Default login setup: AM001 / AM12345. Team Leader: TL001, TL002, TL003 dengan password TL12345. Segera ubah password default.</div>`));
+ return root;
+}
+async function updatePassword(){
+ try{const r=await api(authPayload({action:'updateUser',targetUserId:val('uId'),newPassword:val('uPass')}));msg('userMsg',r.message);}
+ catch(e){msg('userMsg',e.message);}
+}
+</script>
+</body>
+</html>
 
