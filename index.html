@@ -253,17 +253,36 @@ function inputPage(){
   clearEvaluation();
  }
  function loadCategories(){
-  const cats=[...new Set((data.sops||[])
-   .filter(s=>String(s.department).toUpperCase()===dept.value && String(s.status).toUpperCase()!=='INACTIVE')
-   .map(s=>s.category).filter(Boolean))].sort();
-  category.innerHTML='<option value="">Pilih kategori materi</option>'+options(cats,x=>x,x=>x);
-  loadCrew();
+  const selectedDepartment=String(dept.value||'').trim().toUpperCase();
+  const departmentSops=(data.sops||[]).filter(s=>
+   String(s.department||'').trim().toUpperCase()===selectedDepartment &&
+   String(s.status||'ACTIVE').trim().toUpperCase()!=='INACTIVE' &&
+   String(s.category||'').trim()!==''
+  );
+  const cats=[...new Set(departmentSops.map(s=>String(s.category).trim()))]
+   .sort((a,b)=>a.localeCompare(b,'id'));
+  category.innerHTML='<option value="">'+
+   (selectedDepartment?'Pilih kategori materi':'Pilih department terlebih dahulu')+
+   '</option>'+options(cats,x=>x,x=>x);
+  clearEvaluation();
+  if(selectedDepartment){
+   loadCrew();
+  }else{
+   crew.innerHTML='<option value="">Pilih department terlebih dahulu</option>';
+   crew.disabled=true;
+   msg('setupMsg','Pilih department untuk memuat kategori materi dan daftar crew.');
+  }
   unlockSetup();
  }
  async function loadCrew(){
+  clearEvaluation();
+  if(!dept.value || !store.value){
+   crew.innerHTML='<option value="">Pilih department terlebih dahulu</option>';
+   crew.disabled=true;
+   return;
+  }
   crew.innerHTML='<option value="">Memuat daftar crew...</option>';
   crew.disabled=true;
-  clearEvaluation();
   try{
    const result=await api(authPayload({
     action:'getCrewOptions',
@@ -294,16 +313,20 @@ function inputPage(){
  }
  function buildEvaluation(){
   clearEvaluation();
+  const selectedDepartment=String(dept.value||'').trim().toUpperCase();
+  const selectedCategory=String(category.value||'').trim();
   selectedSops=(data.sops||[]).filter(s=>
-   String(s.department).toUpperCase()===dept.value &&
-   String(s.category)===category.value &&
-   String(s.status).toUpperCase()!=='INACTIVE'
-  ).sort((a,b)=>Number(a.sequence||0)-Number(b.sequence||0));
+   String(s.department||'').trim().toUpperCase()===selectedDepartment &&
+   String(s.category||'').trim()===selectedCategory &&
+   String(s.status||'ACTIVE').trim().toUpperCase()!=='INACTIVE'
+  ).sort((a,b)=>Number(a.sequence||0)-Number(b.sequence||0)||String(a.title||'').localeCompare(String(b.title||''),'id'));
   if(!selectedSops.length){
    area.appendChild(el('div','notice','Belum ada materi SOP aktif untuk kategori ini. Minta Area Manager menjalankan sinkronisasi SOP.'));
    return false;
   }
-  area.appendChild(el('div','notice',`Training dimulai untuk ${esc(crew.options[crew.selectedIndex].text)} · ${esc(category.value)} · ${selectedSops.length} materi SOP. Buka dokumen, lakukan refresh, lalu nilai pemahaman crew.`));
+  area.appendChild(el('div','panel',`<h3 class="sectionTitle">Materi Refresh: ${esc(category.value)}</h3>
+   <p class="muted">Department ${esc(dept.value)} · ${selectedSops.length} materi SOP aktif · Peserta ${esc(crew.options[crew.selectedIndex].text)}</p>
+   <div class="notice">Hanya materi dari department dan kategori yang dipilih yang ditampilkan. Buka dokumen SOP, lakukan refresh, lalu berikan nilai pemahaman crew.</div>`));
   selectedSops.forEach(s=>{
    const card=el('div','sopCard',`
     <h4>${esc(s.title)} ${s.critical?'<span class="critical"> • CRITICAL SOP</span>':''}</h4>
@@ -340,7 +363,22 @@ function inputPage(){
   stage.scrollIntoView({behavior:'smooth',block:'start'});
  }
  dept.onchange=loadCategories;
- category.onchange=unlockSetup;
+ category.onchange=()=>{
+  clearEvaluation();
+  stage.classList.add('hidden');
+  startBtn.disabled=false;
+  startBtn.textContent='MULAI TRAINING';
+  if(category.value){
+   const count=(data.sops||[]).filter(s=>
+    String(s.department||'').trim().toUpperCase()===String(dept.value).trim().toUpperCase() &&
+    String(s.category||'').trim()===String(category.value).trim() &&
+    String(s.status||'ACTIVE').trim().toUpperCase()!=='INACTIVE'
+   ).length;
+   msg('setupMsg',`${count} materi SOP aktif tersedia untuk ${dept.value} • ${category.value}. Materi akan ditampilkan setelah MULAI TRAINING.`);
+  }else{
+   msg('setupMsg','Pilih kategori materi untuk melanjutkan.');
+  }
+ };
  store.onchange=loadCrew;
  crew.onchange=()=>{root.querySelector('#iCrewName').value=crew.options[crew.selectedIndex]?.text||'';unlockSetup();};
  startBtn.onclick=startTraining;
