@@ -224,7 +224,7 @@ function sopPage(){
     .sort((a,b)=>a.department.localeCompare(b.department)||a.category.localeCompare(b.category)||a.sequence-b.sequence||a.title.localeCompare(b.title));
   const rows=items.map(s=>{
     const safeLink=String(s.link||'').trim();
-    const validLink=/^https?:\\/\\//i.test(safeLink);
+    const validLink=/^https?:\/\//i.test(safeLink);
     const documentLink=validLink
       ? `<a class="secondary openSopLink" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700;white-space:nowrap">BUKA SOP ↗</a>`
       : '<span class="pill warn">LINK BELUM TERSEDIA</span>';
