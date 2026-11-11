@@ -201,8 +201,12 @@ function inputPage(){
    ${selectField('Crew','iCrew','<option value="">Pilih crew</option>')}
   </div>
   <div class="formRow">
-   ${field('Tanggal Training','iTrainingDate', '', 'date')}
+   ${field('Training Mulai Dari','iStartDate', '', 'date')}
+   ${field('Training Sampai Dengan','iEndDate', '', 'date')}
+  </div>
+  <div class="formRow">
    <div class="field"><label>Trainer</label><input value="${esc(session.fullName)}" disabled></div>
+   <div class="field"><label>Peserta</label><input id="iCrewName" value="" disabled placeholder="Nama crew terpilih"></div>
   </div>
   <div class="actions">
    <button class="primary" id="startTrainingBtn" type="button">MULAI TRAINING</button>
@@ -212,7 +216,11 @@ function inputPage(){
    <hr>
    <h3>2. Pelaksanaan Refresh SOP & Evaluasi</h3>
    <div id="evalArea"></div>
-   <div class="field"><label>Catatan Training (opsional)</label><textarea id="iNotes" placeholder="Catatan pelaksanaan training..."></textarea></div>
+   <h3>3. Kesimpulan Training oleh Team Leader</h3>
+   <div class="field"><label>Kesimpulan Pemahaman Crew</label><textarea id="iConclusion" placeholder="Tuliskan pemahaman crew setelah mengikuti refresh SOP..." required></textarea></div>
+   <div class="field"><label>Kendala Selama Training</label><textarea id="iChallenge" placeholder="Tuliskan kendala atau materi yang masih sulit dipahami..." required></textarea></div>
+   <div class="field"><label>Rencana Tindak Lanjut / Coaching</label><textarea id="iFollowUp" placeholder="Tuliskan rencana coaching, praktik ulang, atau observasi..." required></textarea></div>
+   <div class="field"><label>Catatan Training Tambahan (opsional)</label><textarea id="iNotes" placeholder="Catatan pelaksanaan training..."></textarea></div>
    <div class="actions"><button class="primary" id="submitTrainingBtn" type="button">SELESAIKAN & SIMPAN HASIL</button>
    <button class="secondary" id="editTrainingBtn" type="button">UBAH PILIHAN</button></div>
    <p id="inputMsg" class="muted"></p>
@@ -223,10 +231,12 @@ function inputPage(){
  const store=root.querySelector('#iStore');
  const crew=root.querySelector('#iCrew');
  const area=root.querySelector('#evalArea');
- const date=root.querySelector('#iTrainingDate');
+ const startDate=root.querySelector('#iStartDate');
+ const endDate=root.querySelector('#iEndDate');
  const stage=root.querySelector('#trainingStage');
  const startBtn=root.querySelector('#startTrainingBtn');
- date.value=dateNow();
+ startDate.value=dateNow();
+ endDate.value=dateNow();
  if(isTL){store.value=session.storeId;store.disabled=true;}
 
  let selectedSops=[];
@@ -236,7 +246,7 @@ function inputPage(){
   selectedSops=[];
  }
  function unlockSetup(){
-  [dept,category,store,crew,date].forEach(x=>x.disabled=(isTL && x===store)?true:false);
+  [dept,category,store,crew,startDate,endDate].forEach(x=>x.disabled=(isTL && x===store)?true:false);
   stage.classList.add('hidden');
   startBtn.disabled=false;
   startBtn.textContent='MULAI TRAINING';
@@ -314,13 +324,16 @@ function inputPage(){
   return true;
  }
  function startTraining(){
-  if(!dept.value||!category.value||!store.value||!crew.value||!date.value){
-   msg('setupMsg','Lengkapi Department, Kategori Materi, Store, Crew, dan Tanggal Training terlebih dahulu.');
+  if(!dept.value||!category.value||!store.value||!crew.value||!startDate.value||!endDate.value){
+   msg('setupMsg','Lengkapi Department, Kategori Materi, Store, Crew, Tanggal Mulai, dan Tanggal Selesai Training.');
    return;
+  }
+  if(new Date(startDate.value+'T00:00:00')>new Date(endDate.value+'T00:00:00')){
+   msg('setupMsg','Tanggal mulai tidak boleh melewati tanggal selesai training.');return;
   }
   if(!buildEvaluation())return;
   stage.classList.remove('hidden');
-  [dept,category,store,crew,date].forEach(x=>x.disabled=true);
+  [dept,category,store,crew,startDate,endDate].forEach(x=>x.disabled=true);
   startBtn.disabled=true;
   startBtn.textContent='TRAINING SEDANG BERLANGSUNG';
   msg('setupMsg','Persiapan selesai. Silakan lakukan refresh SOP dan evaluasi crew.');
@@ -329,7 +342,7 @@ function inputPage(){
  dept.onchange=loadCategories;
  category.onchange=unlockSetup;
  store.onchange=loadCrew;
- crew.onchange=unlockSetup;
+ crew.onchange=()=>{root.querySelector('#iCrewName').value=crew.options[crew.selectedIndex]?.text||'';unlockSetup();};
  startBtn.onclick=startTraining;
  root.querySelector('#submitTrainingBtn').onclick=submitTraining;
  root.querySelector('#editTrainingBtn').onclick=unlockSetup;
@@ -338,11 +351,20 @@ function inputPage(){
 }
 async function submitTraining(){
  const department=val('iDept'),category=val('iCategory'),nik=val('iCrew');
- const trainingDate=val('iTrainingDate');
+ const startDate=val('iStartDate'),endDate=val('iEndDate');
+ const trainingConclusion=val('iConclusion');
+ const trainingChallenge=val('iChallenge');
+ const followUpPlan=val('iFollowUp');
  const cards=[...document.querySelectorAll('#evalArea .sopCard')];
- if(!department||!category||!nik||!trainingDate){
-  msg('inputMsg','Lengkapi data training terlebih dahulu.');
+ if(!department||!category||!nik||!startDate||!endDate){
+  msg('inputMsg','Lengkapi data training dan rentang tanggal mulai-selesai.');
   return;
+ }
+ if(new Date(startDate+'T00:00:00')>new Date(endDate+'T00:00:00')){
+  msg('inputMsg','Tanggal mulai tidak boleh melewati tanggal selesai training.');return;
+ }
+ if(!trainingConclusion.trim()||!trainingChallenge.trim()||!followUpPlan.trim()){
+  msg('inputMsg','Kesimpulan pemahaman, kendala, dan rencana tindak lanjut wajib diisi.');return;
  }
  if(!cards.length){msg('inputMsg','Materi SOP belum dimuat. Klik MULAI TRAINING terlebih dahulu.');return;}
  if(cards.some(c=>!selectedScores[c.dataset.sopId])){
@@ -358,7 +380,8 @@ async function submitTraining(){
  btn.disabled=true;btn.textContent='MENYIMPAN...';
  try{
   const r=await api(authPayload({
-   action:'submitQuickEvaluation',department,category,nik,trainingDate,
+   action:'submitQuickEvaluation',department,category,nik,startDate,endDate,
+   trainingConclusion,trainingChallenge,followUpPlan,
    evaluations,notes:val('iNotes')
   }));
   alert(`${r.message}\nAttempt: ${r.attempt}\nRata-rata: ${r.average}\nKesimpulan: ${r.status}`);
@@ -466,9 +489,9 @@ function reportPage(){
  root.appendChild(grid);
  root.appendChild(el('div','panel',`<h3 class="sectionTitle">Kesimpulan Pemahaman SOP</h3>
   <p class="muted">${session.role==='TL'?'Menampilkan hasil evaluasi training crew di '+esc(session.storeName||'store kamu')+'. Nilai pemahaman diinput pada tahap Evaluasi SOP setelah tombol MULAI TRAINING.':'Ringkasan hasil refresh training seluruh store berdasarkan materi yang telah dievaluasi.'} Status pemahaman memperhitungkan nilai rata-rata dan temuan pada SOP critical.</p>
-  ${table(['Tanggal','Department','Kategori Materi','Crew','Store','Rata-rata','Kesimpulan'],results.slice().reverse().map(r=>[
-   r.trainingDate,r.department,r.section,r.crewName,r.storeName,
-   Number(r.average||0).toFixed(2),statusPill(r.status)
+  ${table(['Mulai','Selesai','Department','Kategori Materi','Crew','Store','Rata-rata','Status','Kesimpulan TL','Kendala','Tindak Lanjut'],results.slice().reverse().map(r=>[
+   r.startDate||r.trainingDate,r.endDate||r.trainingDate,r.department,r.section,r.crewName,r.storeName,
+   Number(r.average||0).toFixed(2),statusPill(r.status),r.trainingConclusion,r.trainingChallenge,r.followUpPlan
   ]),true)}`));
  const byCategory={};
  details.forEach(d=>{
