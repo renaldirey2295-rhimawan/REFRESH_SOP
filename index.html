@@ -222,13 +222,19 @@ function sopPage(){
   const items=(data.sops||[]).filter(s=>(!dept||s.department===dept)&&
     (!q||[s.title,s.code,s.category,s.itemType].join(' ').toLowerCase().includes(q)))
     .sort((a,b)=>a.department.localeCompare(b.department)||a.category.localeCompare(b.category)||a.sequence-b.sequence||a.title.localeCompare(b.title));
-  const rows=items.map(s=>[
-    s.department,s.category,s.itemType||s.standard,s.title,
-    s.link?`<button class="secondary openSop" data-link="${esc(s.link)}">BUKA SOP ↗</button>`:'<span class="pill warn">LINK BELUM TERSEDIA</span>',
-    s.status||'ACTIVE'
-  ]);
-  list.innerHTML=`<div class="topline" style="margin:14px 0"><b>${items.length} materi ditemukan</b><span class="muted" style="font-size:12px">Total library: ${(data.sops||[]).length}</span></div>${table(['Department','Sheet Sumber','Jenis Materi','Nama Materi','Dokumen','Status'],rows,true)}`;
-  list.querySelectorAll('.openSop').forEach(btn=>btn.onclick=()=>window.open(btn.dataset.link,'_blank','noopener'));
+  const rows=items.map(s=>{
+    const safeLink=String(s.link||'').trim();
+    const validLink=/^https?:\\/\\//i.test(safeLink);
+    const documentLink=validLink
+      ? `<a class="secondary openSopLink" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700;white-space:nowrap">BUKA SOP ↗</a>`
+      : '<span class="pill warn">LINK BELUM TERSEDIA</span>';
+    return [
+      s.department,s.category,s.itemType||s.standard,s.title,
+      s.status||'ACTIVE',
+      documentLink
+    ];
+  });
+  list.innerHTML=`<div class="topline" style="margin:14px 0"><b>${items.length} materi ditemukan</b><span class="muted" style="font-size:12px">Total library: ${(data.sops||[]).length}</span></div>${table(['Department','Sheet Sumber','Jenis Materi','Nama Materi','Status','Dokumen'],rows,true)}`;
  }
  const syncButton=panel.querySelector('#syncSopBtn');
  if(syncButton) syncButton.onclick=async()=>{
