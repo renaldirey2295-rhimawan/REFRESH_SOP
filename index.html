@@ -45,7 +45,7 @@ const CONFIG_API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 let session = null, data = null, currentPage = 'dashboard', selectedScores = {};
 const menu = [
  ['dashboard','Dashboard'],['program','Weekly Program'],['input','Input Training'],
- ['crew','Master Crew'],['sop','Master SOP'],['report','Evaluation Report'],
+ ['crew','Master Crew'],['sop','SOP Library'],['report','Evaluation Report'],
  ['history','Training History'],['users','User Access']
 ];
 function api(payload){
@@ -86,7 +86,7 @@ function showApp(){
 function logout(){session=null;data=null;document.getElementById('appView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');}
 function render(){
  const nav=document.getElementById('nav');nav.innerHTML='';
- menu.filter(m=>session.role==='AM'||!['crew','sop','program','users'].includes(m[0])).forEach(m=>{
+ menu.filter(m=>session.role==='AM'||!['crew','program','users'].includes(m[0])).forEach(m=>{
   const b=document.createElement('button');b.textContent=m[1];b.className=currentPage===m[0]?'active':'';
   b.onclick=()=>{currentPage=m[0];render()};nav.appendChild(b);
  });
@@ -201,17 +201,44 @@ async function saveCrew(){
 }
 function sopPage(){
  const root=el('div');
- root.appendChild(el('div','panel',`<h3 class="sectionTitle">Tambah / Update Master SOP</h3>
- <div class="formRow">${selectField('Department','sDept','<option>BACK</option><option>FRONT</option>')}${selectField('Section','sSection','')}</div>
- <div class="formRow">${field('Kode SOP','sCode','Contoh: BK-001')}${field('Judul SOP','sTitle','Nama standar kerja')}</div>
- <div class="field"><label>Standard / Materi SOP</label><textarea id="sStandard" placeholder="Jelaskan standar dan langkah A-Z..."></textarea></div>
- <div class="formRow">${field('Urutan','sSeq','1','number')}${selectField('Kategori','sCategory','<option>GENERAL</option><option>FOOD SAFETY</option><option>SERVICE</option><option>PRODUCT</option><option>HYGIENE</option>')}</div>
- <div class="formRow">${selectField('Critical SOP?','sCritical','<option value="false">NO</option><option value="true">YES</option>')}${selectField('Status','sStatus','<option>ACTIVE</option><option>INACTIVE</option>')}</div>
- <div class="actions"><button class="primary" onclick="saveSop()">SIMPAN SOP</button></div><p id="sopMsg" class="muted"></p>`));
- const dept=root.querySelector('#sDept'),section=root.querySelector('#sSection');
- function sections(){const arr=dept.value==='BACK'?['Bakaran','Masakan','Racikan','Checker']:['Minuman','Kasir','Order Taker','Runner','Host'];section.innerHTML=options(arr,x=>x,x=>x);}
- dept.onchange=sections;sections();
- root.appendChild(el('div','panel',`<h3 class="sectionTitle">Daftar Master SOP</h3>${table(['Kode','Judul','Department','Section','Kategori','Critical','Status'],data.sops.map(s=>[s.code,s.title,s.department,s.section,s.category,s.critical?'YES':'NO','ACTIVE']))}`));
+ const panel=el('div','panel');
+ panel.appendChild(el('div','topline',`<div><h3 class="sectionTitle" style="margin:0">SOP Library</h3><div class="muted" style="font-size:12px;margin-top:5px">Daftar materi tersinkron dari spreadsheet sumber SOP.</div></div>${session.role==='AM'?'<button class="primary" id="syncSopBtn">SYNC SOP SEKARANG</button>':''}`));
+ panel.appendChild(el('div','notice','Sistem membaca kolom A-B untuk Product & Process dan kolom D-E untuk Preparation, mulai baris 4 pada setiap sheet sumber.'));
+ const controls=el('div','formRow');
+ controls.innerHTML=`<div class="field"><label>Cari nama materi / kode SOP</label><input id="sopSearch" placeholder="Ketik nama menu atau preparation..."></div><div class="field"><label>Filter Department</label><select id="sopDeptFilter"><option value="">Semua Department</option><option>FRONT</option><option>BACK</option><option>SPECIAL</option></select></div>`;
+ panel.appendChild(controls);
+ const list=el('div');
+ panel.appendChild(list);
+ root.appendChild(panel);
+
+ function draw(){
+  const q=val('sopSearch').toLowerCase();
+  const dept=val('sopDeptFilter');
+  const items=(data.sops||[]).filter(s=>(!dept||s.department===dept)&&
+    (!q||[s.title,s.code,s.category,s.itemType].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>a.department.localeCompare(b.department)||a.category.localeCompare(b.category)||a.sequence-b.sequence||a.title.localeCompare(b.title));
+  const rows=items.map(s=>[
+    s.department,s.category,s.itemType||s.standard,s.title,
+    s.link?`<button class="secondary openSop" data-link="${esc(s.link)}">BUKA SOP ↗</button>`:'<span class="pill warn">LINK BELUM TERSEDIA</span>',
+    s.status||'ACTIVE'
+  ]);
+  list.innerHTML=`<div class="topline" style="margin:14px 0"><b>${items.length} materi ditemukan</b><span class="muted" style="font-size:12px">Total library: ${(data.sops||[]).length}</span></div>${table(['Department','Sheet Sumber','Jenis Materi','Nama Materi','Dokumen','Status'],rows,true)}`;
+  list.querySelectorAll('.openSop').forEach(btn=>btn.onclick=()=>window.open(btn.dataset.link,'_blank','noopener'));
+ }
+ const syncButton=panel.querySelector('#syncSopBtn');
+ if(syncButton) syncButton.onclick=async()=>{
+  const btn=syncButton;btn.disabled=true;btn.textContent='SINKRONISASI...';
+  try{
+   const r=await api(authPayload({action:'syncSopSource'}));
+   await refreshData();
+   alert(r.message+' Total materi: '+r.imported+(r.missingTabs&&r.missingTabs.length?'\\nTab tidak ditemukan: '+r.missingTabs.join(', '):''));
+   draw();
+  }catch(e){alert(e.message);}
+  finally{btn.disabled=false;btn.textContent='SYNC SOP SEKARANG';}
+ };
+ controls.querySelector('#sopSearch').addEventListener('input',draw);
+ controls.querySelector('#sopDeptFilter').addEventListener('change',draw);
+ draw();
  return root;
 }
 async function saveSop(){
@@ -244,4 +271,3 @@ async function updatePassword(){
 </script>
 </body>
 </html>
-
